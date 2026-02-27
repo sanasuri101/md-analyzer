@@ -1,0 +1,108 @@
+{
+  "project": "md-analyzer",
+  "description": "Node.js CLI tool that analyzes Markdown files for word count, reading time, and heading structure",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Project scaffolding with TypeScript, Commander, and Vitest",
+      "description": "Set up the md-analyzer Node.js project from scratch.\n\nCreate the following structure:\n```\nmd-analyzer/\n  src/\n    cli.ts          # Commander setup, entry point\n    analyzer.ts     # Core analysis logic (pure functions, empty stubs)\n    formatter.ts    # Output formatting (empty stubs)\n  tests/\n    fixtures/\n      sample.md     # Test fixture with known word count and headings\n  package.json\n  tsconfig.json\n  vitest.config.ts\n  README.md\n```\n\npackage.json requirements:\n- name: md-analyzer\n- type: module (ESM)\n- bin: { \"md-analyzer\": \"./dist/cli.js\" }\n- scripts: build (tsc), test (vitest), start (node dist/cli.js)\n- dependencies: commander\n- devDependencies: typescript, vitest, @types/node\n\ntsconfig.json: strict mode, target ES2022, module NodeNext, moduleResolution NodeNext, outDir dist, rootDir src.\n\nvitest.config.ts: basic config.\n\ncli.ts should set up Commander with:\n- Program name 'md-analyzer', description, version from package.json\n- Command: analyze <file> with --json and --wpm <number> options\n- For now, the analyze command can print 'Not yet implemented'\n\nThe project must build with `npm run build` and `npx md-analyzer --help` must show usage.",
+      "acceptanceCriteria": [
+        "package.json has type: module, correct bin entry, and all required deps",
+        "tsconfig.json compiles with strict mode and ESM output",
+        "npm run build succeeds with zero errors",
+        "npx md-analyzer --help prints usage information",
+        "npx md-analyzer --version prints version number",
+        "Directory structure matches the spec",
+        "vitest.config.ts exists and npm test runs (even if no tests yet)",
+        "tests/fixtures/sample.md exists with sample Markdown content"
+      ],
+      "priority": 1,
+      "passes": false,
+      "dependencies": [],
+      "issueNumber": null,
+      "aoSessionId": null,
+      "evalStatus": null
+    },
+    {
+      "id": "US-002",
+      "title": "Implement Markdown analyzer core functions",
+      "description": "Implement the core analysis logic in src/analyzer.ts.\n\nFunctions to implement:\n\n1. `countWords(content: string): number`\n   - Count words in Markdown content\n   - Exclude fenced code blocks (``` ... ```)\n   - Strip inline HTML tags before counting\n   - Split on whitespace, filter empty strings\n\n2. `calculateReadingTime(wordCount: number, wpm?: number): { minutes: number; seconds: number; text: string }`\n   - Default wpm = 200\n   - minutes and seconds are the broken-down reading time\n   - text is human-readable like '2 min read' or '< 1 min read'\n\n3. `extractHeadings(content: string): Heading[]`\n   - Parse ATX headings: /^(#{1,6})\\s+(.+)$/gm\n   - Return tree structure: { level: number; text: string; children: Heading[] }\n   - Top-level array contains h1s (or lowest level found), nested appropriately\n   - Headings inside fenced code blocks should be excluded\n\n4. `analyzeFile(filePath: string): Promise<AnalysisResult>`\n   - Read file from disk using node:fs/promises\n   - Run countWords, calculateReadingTime, extractHeadings\n   - Return combined AnalysisResult\n   - Throw descriptive error if file doesn't exist\n\nType exports:\n```typescript\nexport interface Heading {\n  level: number;\n  text: string;\n  children: Heading[];\n}\n\nexport interface AnalysisResult {\n  filePath: string;\n  wordCount: number;\n  readingTime: { minutes: number; seconds: number; text: string };\n  headings: Heading[];\n}\n```\n\nWrite unit tests in tests/analyzer.test.ts covering:\n- countWords: plain text, with code blocks, with HTML tags, empty string\n- calculateReadingTime: various word counts, custom WPM, zero words\n- extractHeadings: flat headings, nested headings, no headings, code block headings excluded\n- analyzeFile: valid file (use fixture), missing file throws\n\nUse vitest. All imports use .js extensions. Use node: prefix for builtins.",
+      "acceptanceCriteria": [
+        "countWords correctly counts words excluding code blocks and HTML",
+        "calculateReadingTime returns correct minutes/seconds/text",
+        "extractHeadings returns correct tree structure for nested headings",
+        "extractHeadings excludes headings inside fenced code blocks",
+        "analyzeFile reads a file and returns combined AnalysisResult",
+        "analyzeFile throws on missing file with descriptive error",
+        "All analyzer tests pass",
+        "npm run build succeeds"
+      ],
+      "priority": 2,
+      "passes": false,
+      "dependencies": ["US-001"],
+      "issueNumber": null,
+      "aoSessionId": null,
+      "evalStatus": null
+    },
+    {
+      "id": "US-003",
+      "title": "Implement output formatter (text and JSON)",
+      "description": "Implement output formatting in src/formatter.ts.\n\nFunctions:\n\n1. `formatText(result: AnalysisResult): string`\n   Pretty-print results for terminal output. Format:\n   ```\n   File: README.md\n   Words: 1,234\n   Reading time: 6 min read\n\n   Headings:\n     # Introduction\n       ## Getting Started\n       ## Installation\n     # Usage\n       ## CLI Options\n   ```\n   - Word count should use locale formatting (commas for thousands)\n   - Headings indented by 2 spaces per level (h1 = 2 spaces, h2 = 4 spaces, etc.)\n   - If no headings, print 'Headings: (none)'\n\n2. `formatJson(result: AnalysisResult): string`\n   - JSON.stringify with 2-space indentation\n   - Must produce valid, parseable JSON\n\nWrite tests in tests/formatter.test.ts:\n- formatText produces expected output format with known input\n- formatText handles zero words, no headings\n- formatText formats word count with commas\n- formatJson produces valid JSON\n- formatJson round-trips (parse output matches input)\n\nImport AnalysisResult type from ./analyzer.js (ESM .js extension).",
+      "acceptanceCriteria": [
+        "formatText produces correctly formatted terminal output",
+        "Word count uses comma formatting for thousands",
+        "Heading tree is properly indented in text output",
+        "formatJson produces valid parseable JSON",
+        "All formatter tests pass",
+        "npm run build succeeds"
+      ],
+      "priority": 2,
+      "passes": false,
+      "dependencies": ["US-001"],
+      "issueNumber": null,
+      "aoSessionId": null,
+      "evalStatus": null
+    },
+    {
+      "id": "US-004",
+      "title": "Wire CLI analyze command with full pipeline",
+      "description": "Connect the CLI entry point (src/cli.ts) to the analyzer and formatter.\n\nThe analyze command should:\n1. Accept a positional <file> argument (required)\n2. Options: --json (boolean, default false), --wpm <number> (default 200)\n3. Call analyzeFile(file) from analyzer.ts\n4. If --json, call formatJson and print to stdout\n5. If not --json, call formatText and print to stdout\n6. On error (file not found, read error): print error to stderr, exit with code 1\n7. On success: exit with code 0\n\nMake `analyze` the default command so both work:\n- `md-analyzer analyze README.md`\n- `md-analyzer README.md` (shorthand)\n\nWrite integration tests in tests/cli.test.ts:\n- Run the built CLI against tests/fixtures/sample.md\n- Verify stdout contains word count, reading time, headings\n- Verify --json flag produces valid JSON\n- Verify --wpm flag changes reading time\n- Verify missing file prints error to stderr and exits with code 1\n- Verify --help and --version work\n\nUse child_process.execFile in tests to run the actual CLI binary.\nTests should run `npm run build` in a beforeAll or assume dist/ is built.",
+      "acceptanceCriteria": [
+        "md-analyzer analyze <file> outputs word count, reading time, and headings",
+        "md-analyzer <file> works as shorthand (default command)",
+        "--json flag outputs valid JSON to stdout",
+        "--wpm flag changes reading time calculation",
+        "Missing file prints error to stderr and exits with code 1",
+        "--help and --version flags work",
+        "All CLI integration tests pass",
+        "npm run build succeeds"
+      ],
+      "priority": 3,
+      "passes": false,
+      "dependencies": ["US-002", "US-003"],
+      "issueNumber": null,
+      "aoSessionId": null,
+      "evalStatus": null
+    },
+    {
+      "id": "US-005",
+      "title": "End-to-end tests and coverage verification",
+      "description": "Add end-to-end smoke tests and verify test coverage.\n\n1. Create a comprehensive test fixture at tests/fixtures/complex.md:\n   - Multiple heading levels (h1 through h4)\n   - Fenced code blocks with headings inside (should be excluded)\n   - Inline HTML tags\n   - At least 500 words for meaningful reading time\n   - Known expected values documented in a comment at top of test file\n\n2. Add e2e test in tests/e2e.test.ts:\n   - Analyze complex.md fixture, verify exact word count\n   - Verify reading time calculation matches expected\n   - Verify heading tree structure matches expected\n   - Verify JSON output round-trips correctly\n   - Verify text output matches expected snapshot\n\n3. Verify coverage:\n   - Run vitest with coverage\n   - Ensure 90%+ line coverage across analyzer.ts, formatter.ts, cli.ts\n   - Add coverage config to vitest.config.ts if not present\n\n4. Final cleanup:\n   - Ensure README.md documents usage\n   - Ensure package.json 'files' field includes dist/\n   - Run npm pack --dry-run to verify publishable",
+      "acceptanceCriteria": [
+        "Complex test fixture exists with known expected values",
+        "E2E tests verify exact word count, reading time, and heading structure",
+        "JSON output round-trip test passes",
+        "All tests pass (unit + integration + e2e)",
+        "Test coverage is 90%+ across all source files",
+        "npm pack --dry-run succeeds",
+        "README.md documents usage with examples"
+      ],
+      "priority": 4,
+      "passes": false,
+      "dependencies": ["US-004"],
+      "issueNumber": null,
+      "aoSessionId": null,
+      "evalStatus": null
+    }
+  ]
+}
