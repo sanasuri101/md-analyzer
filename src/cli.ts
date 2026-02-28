@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { analyzeFile } from "./analyzer.js";
+import { analyzeFile, calculateReadingTime } from "./analyzer.js";
 import { formatText, formatJson } from "./formatter.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -29,29 +29,19 @@ program
   .action(async (file: string, options: { json: boolean; wpm: string }) => {
     try {
       const wpm = parseInt(options.wpm, 10);
-      
+
       if (isNaN(wpm) || wpm <= 0) {
         console.error("Error: Words per minute must be a positive number");
         process.exit(1);
       }
-      
+
       const result = await analyzeFile(file);
-      
-      // Override reading time with custom WPM if specified
+
+      // Recalculate reading time with custom WPM if specified
       if (wpm !== 200) {
-        const wordCount = result.wordCount;
-        const totalSeconds = Math.round((wordCount / wpm) * 60);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        result.readingTime = {
-          minutes,
-          seconds,
-          text: minutes > 0 
-            ? `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`
-            : `${seconds} seconds`
-        };
+        result.readingTime = calculateReadingTime(result.wordCount, wpm);
       }
-      
+
       const output = options.json ? formatJson(result) : formatText(result);
       console.log(output);
     } catch (error) {
