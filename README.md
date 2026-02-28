@@ -1,35 +1,104 @@
-# md-analyzer
+# md-analyzer CLI
 
-CLI tool that analyzes Markdown files for word count, reading time, and heading structure.
+A command-line tool for analyzing Markdown files. Extract metadata, count words, and generate reports from your Markdown documents.
 
 ## Installation
 
-```bash
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm (comes with Node.js)
+
+### Install from npm
+
+bash
+npm install -g md-analyzer
+
+### Install from source
+
+bash
+git clone https://github.com/yourusername/md-analyzer.git
+cd md-analyzer
 npm install
-npm run build
-```
+npm link
 
 ## Usage
 
-```bash
-# Analyze a Markdown file
-npx md-analyzer analyze README.md
+### Basic Usage
 
-# Output as JSON
-npx md-analyzer analyze README.md --json
+bash
+md-analyzer <file.md>
 
-# Custom words-per-minute
-npx md-analyzer analyze README.md --wpm 250
+### Options
 
-# Shorthand (analyze is the default command)
-npx md-analyzer README.md
-```
+Usage: md-analyzer [options] <file...>
 
-## Development
+Options:
+  -V, --version          output the version number
+  -o, --output <file>    specify output file for report (default: stdout)
+  -f, --format <format>  specify output format (json, markdown, text) (default: text)
+  -v, --verbose          verbose output
+  -h, --help             display help for command
 
-```bash
-npm install        # Install dependencies
-npm run build      # Compile TypeScript
-npm test           # Run tests
-npm start          # Run the CLI (pass args after --)
-```
+## Examples
+
+### Analyze a single Markdown file
+
+bash
+md-analyzer README.md
+
+### Analyze multiple files and generate a JSON report
+
+bash
+md-analyzer docs/*.md -o report.json -f json
+
+### Generate a Markdown report with verbose output
+
+bash
+md-analyzer article.md -o report.md -f markdown -v
+
+### Analyze all Markdown files in a directory
+
+bash
+md-analyzer /path/to/markdown/files/*.md
+
+## Output Formats
+
+### Text Format (default)
+
+File: README.md
+Word count: 245
+Heading count: 5
+Link count: 12
+Image count: 3
+Reading time: ~2 minutes
+
+### JSON Format
+
+json
+{
+  "file": "README.md",
+  "wordCount": 245,
+  "headingCount": 5,
+  "linkCount": 12,
+  "imageCount": 3,
+  "readingTime": 2
+}
+
+### Markdown Format
+
+# Analysis Report: README.md
+
+- **Word Count**: 245
+- **Heading Count**: 5
+- **Link Count**: 12
+- **Image Count**: 3
+- **Reading Time**: ~2 minutes
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.
