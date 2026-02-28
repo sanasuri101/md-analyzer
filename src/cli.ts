@@ -4,8 +4,8 @@ import { Command } from "commander";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { analyzeMarkdown } from "./analyzer.js";
-import { formatResults } from "./formatter.js";
+import { analyzeFile } from "./analyzer.js";
+import { formatText, formatJson } from "./formatter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,7 +28,6 @@ program
   .option("--wpm <number>", "Words per minute for reading time", "200")
   .action(async (file: string, options: { json: boolean; wpm: string }) => {
     try {
-      const content = await readFile(file, "utf-8");
       const wpm = parseInt(options.wpm, 10);
       
       if (isNaN(wpm) || wpm <= 0) {
@@ -36,9 +35,24 @@ program
         process.exit(1);
       }
       
-      const results = analyzeMarkdown(content, wpm);
-      const output = formatResults(results, options.json);
+      const result = await analyzeFile(file);
       
+      // Override reading time with custom WPM if specified
+      if (wpm !== 200) {
+        const wordCount = result.wordCount;
+        const totalSeconds = Math.round((wordCount / wpm) * 60);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        result.readingTime = {
+          minutes,
+          seconds,
+          text: minutes > 0 
+            ? `${minutes} minute${minutes !== 1 ? 's' : ''} ${seconds} second${seconds !== 1 ? 's' : ''}`
+            : `${seconds} seconds`
+        };
+      }
+      
+      const output = options.json ? formatJson(result) : formatText(result);
       console.log(output);
     } catch (error) {
       if (error instanceof Error) {
